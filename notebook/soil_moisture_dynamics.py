@@ -644,7 +644,10 @@ class SoilMoisture(Component):
             #) 
             
             #Inf_cap = Inf_cap * (ksat_t_cell/ksat_cell_pre)
-            Inf_cap = (ksat_cell*1000)/24
+            # Inf_cap = (ksat_cell*1000)/24 # mm/hr; convert infiltration to depth
+            Inf_cap = (ksat_cell*1000) # mm
+            coeff_water_rep = 0.01   # try 0.01–0.05
+            Inf_cap = Inf_cap * coeff_water_rep
            
             # Interception capacity ---- ERKANI--- as needed interception capacity can be scaled by self._fr
             Int_cap = min(self._interception_cap[cell], P)
@@ -652,16 +655,22 @@ class SoilMoisture(Component):
             
             # Interception capacity
             Peff = max(P - Int_cap, 0.0)  # Effective precipitation depth
+            # Ia = 1.0   # mm (adjust)
+            # Peff = max(P - Int_cap - Ia, 0.0)
             
             # --- infiltration-excess runoff Rs (SCS) ---
-            #infiltration = Inf_cap * (24)  # mm
+            # infiltration = Inf_cap * (24)  # mm
             infiltration = max(Inf_cap, 1e-6)
+            
 
             if Peff > 0.0:
                 Rs = (Peff * Peff) / (Peff + infiltration)
                 Rs = min(Rs, Peff)
             else:
                 Rs = 0.0
+            
+            # Tstorm = 8.0   # hours (assumption)
+            # rate_p = P / Tstorm
 
             Peff = Peff - Rs
             Peff = max(Peff, 0.0)

@@ -5,8 +5,10 @@ dependencies:
   - python=3.10
   - pip
   - numpy
+  - pandas
   - pyyaml
   - rasterio
+  - requests
   - fiona
   - geopandas
   - shapely
