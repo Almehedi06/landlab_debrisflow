@@ -1,0 +1,10 @@
+project:
+  name: pioneer_mmp_landslide_cohesion_burnsev_reduction
+
+static_inputs:
+  apply_cohesion_reduction: true
+  cohesion_reduction_by_burn:
+    1: 0.0
+    2: 0.15
+    3: 0.35
+    4: 0.60

@@ -38,6 +38,7 @@ export-ascii-to-tif = "export_ascii_to_tif:main"
 export-raster-products = "export_ascii_to_tif:main"
 build-prism-forcing = "prism_forcing:main"
 resolve-workflow-config = "workflow_config:main"
+run-mmp-landslide = "debris_landlab.mmp.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -49,3 +50,7 @@ py-modules = [
   "reproject_and_resample",
   "workflow_config",
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["debris_landlab*"]

@@ -1,0 +1,99 @@
+project:
+  name: pioneer_mmp_landslide
+
+paths:
+  scenario_dir: /mnt/c/Users/amehedi/Downloads/pioneer/output
+
+terrain:
+  dem_filename: topographic__elevation.asc
+  dem_nodata: -999999.0
+  low_elevation_outlet_max_m: 337.0
+  flow_director: FlowDirectorD8
+  depression_finder: DepressionFinderAndRouter
+
+static_inputs:
+  layers:
+    soil__thickness: soil__thickness.asc
+    soil__density: soil__density.asc
+    soil__internal_friction_angle: soil__internal_friction_angle.asc
+    porosity: porosity.asc
+    field__capacity: field__capacity.asc
+    wilting__point: wilting__point.asc
+    soil__saturated_hydraulic_conductivity: soil__saturated_hydraulic_conductivity.asc
+    vegetation__plant_functional_type: vegetation__plant_functional_type.asc
+    soil__maximum_total_cohesion: soil__maximum_total_cohesion.asc
+    soil__mode_total_cohesion: soil__mode_total_cohesion.asc
+    soil__minimum_total_cohesion: soil__minimum_total_cohesion.asc
+    burn__severity: burn__severity.asc
+  field_nodata:
+    soil__thickness: 2.55
+    soil__density: 0.426
+    soil__internal_friction_angle: 27.0
+    soil__saturated_hydraulic_conductivity: 7.0525634163099795e+93
+    vegetation__plant_functional_type: -9999.0
+    soil__maximum_total_cohesion: -9999.0
+    soil__mode_total_cohesion: -9999.0
+    soil__minimum_total_cohesion: -9999.0
+  min_soil_thickness_m: 0.01
+  transmissivity_multiplier: 2.5
+  min_transmissivity_m2_per_day: 0.01
+  lai_by_pft:
+    0: 1.5
+    1: 2.0
+    2: 4.0
+    3: 1.0
+  apply_cohesion_reduction: false
+  cohesion_reduction_by_burn:
+    1: 0.0
+    2: 0.15
+    3: 0.35
+    4: 0.60
+
+forcing:
+  start_date: "2025-12-07"
+  end_date: "2025-12-20"
+  forcing_csv: prism_forcing/forcing_daily_prism.csv
+  sanitize_nodata: true
+  temperature_fill_method: mean
+
+snow:
+  enabled: true
+  t_snow_c: -1.1
+  t_rain_c: 3.0
+  melt_factor_mm_per_c_day: 5.0
+  melt_base_temp_c: 0.0
+
+ecohydrology:
+  latitude_deg: 47.7
+  albedo: 0.2
+  zveg_m: 0.5
+  z_wind_m: 2.0
+  vwind_mps: 3.04
+  relative_humidity: 0.8
+  # Null uses each PRISM forcing date as the model day-of-year.
+  initial_time_years: null
+  storm_duration_hours: 24.0
+
+landslide:
+  number_of_iterations: 1000
+  route_recharge: true
+  recharge_floor_mm_per_day: 0.01
+  recharge_std_fraction: 0.1
+  seed: 0
+
+export:
+  enabled: false
+  export_dir: /mnt/c/Users/amehedi/Downloads
+  template_tif: /mnt/c/Users/amehedi/Downloads/pioneer/output/topographic__elevation.tif
+  nodata: -999999.0
+  fields:
+    - [groundwater__recharge_mean, node]
+    - [groundwater__recharge_standard_deviation, node]
+    - [groundwater__runoff_mean, node]
+    - [mean_runoff, node]
+    - [mean_recharge, node]
+    - [max_recharge, node]
+    - [routed_recharge_max, node]
+    - [landslide__probability_of_failure, node]
+    - [soil__probability_of_saturation, node]
+    - [soil__mean_relative_wetness, node]

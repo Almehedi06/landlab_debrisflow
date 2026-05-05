@@ -1,63 +1,20 @@
 # debris-landlab
 
-Landlab-focused workspace for postfire topographic evolution experiments and DEM differencing.
+Landlab-focused workspace for postfire terrain, ecohydrology, and landslide probability workflows.
 
-This repo has been stripped of ML training and data-pipeline code. It is for:
-- loading ASCII DEMs,
-- running linear/nonlinear Landlab experiments,
-- comparing modeled elevation change with LiDAR DEM differences,
-- exporting results to GeoTIFF and Zarr.
+The production code lives in `src/`. Notebooks are kept for exploration, checks, and visualization, but the multi-model landslide probability workflow is now runnable from a YAML config and a script.
 
-<<<<<<< HEAD
-## Folder Layout
+## Layout
 
-- `config/base.yaml`: shared workflow config for landslide, hillslope diffusion, and fluvial incision runs
-- `config/scenarios/`: small YAML overrides for scenario-specific changes
-- `config/landlab_experiments.yaml`: existing topographic experiment config kept for backward compatibility
-- `notebook/`: Landlab notebooks
-- `scripts/run_landlab_batch.py`: parallel CPU batch runner for independent Landlab runs
-- `src/dem_difference.py`: pre/post DEM differencing utility
-- `src/export_ascii_to_tif.py`: ASCII-to-GeoTIFF and Zarr export utility
-- `src/workflow_config.py`: lightweight config merge and validation helper
-- `src/reproject_and_resample.py`: reprojection/resampling helpers
-=======
-At this stage, the repository contains notebooks only to predict landslide probability and hillslope diffusion. 
-
-## Structure
-
-```text
-landlab_debrisflow/
-├── .github/
-│   └── workflows/
-├── config/
-├── data/
-├── experiments/
-├── models/
-├── notebooks/
-│   ├── Landslide_PF_Bolt_Creek.ipynb
-│   ├── Multi_model_Probability.ipynb
-│   └── diffusion_and_fluvial_incision_2024.ipynb
-├── scripts/
-├── src/
-├── tests/
-├── .gitignore
-├── environment.yml
-└── README.md
-```
-
-## Notebook Inventory
-
-- `notebooks/Landslide_PF_Bolt_Creek.ipynb`: Bolt Creek landslide probability and runout workflow.
-- `notebooks/Multi_model_Probability.ipynb`: multi-model landslide probability workflow.
-- `notebooks/diffusion_and_fluvial_incision_2024.ipynb`: Landlab diffusion and fluvial incision example.
-
-## Expected Local Inputs
-
-Some notebooks reference local raster inputs and helper modules that are not currently tracked in this repository. Keep them at the project root so the notebooks can import and open them consistently.
-
-- Raster inputs such as `Stehekin_10m.asc` and `landlab_ascii/*.asc`
-- Helper modules such as `potential_evapotranspiration_field.py`, `potential_evapotranspiration_field_OFFICIAL.py`, `radiation.py`, `radiation_field_OFFICIAL.py`, and `soil_moisture_dynamics.py`
->>>>>>> gaia/main
+- `config/base.yaml`: shared config for older workflow experiments
+- `config/mmp_landslide.yaml`: modular forcing, snow, ecohydrology, and landslide probability run config
+- `config/scenarios/`: scenario-specific YAML overrides
+- `notebook/`: exploratory and legacy notebooks, kept intact
+- `scripts/run_mmp_landslide.py`: script entrypoint for the modular MMP landslide workflow
+- `scripts/run_landlab_batch.py`: parallel batch runner for terrain evolution experiments
+- `src/debris_landlab/components/`: project-local Landlab component variants
+- `src/debris_landlab/mmp/`: modular MMP workflow code grouped by notebook section
+- `src/prism_forcing.py`: PRISM download, clip, align, and ASC export utility
 
 ## Environment
 
@@ -71,10 +28,102 @@ conda activate debris-landlab
 Pip:
 
 ```bash
-pip install -r requirements.txt
+pip install -e ".[dev,viz]"
 ```
 
-## Run Batch Experiments
+## Run MMP Landslide Probability
+
+The old `MMP_LS.ipynb` workflow is split into modules:
+
+- `terrain.py`: DEM loading, boundary setup, flow accumulation
+- `static_inputs.py`: soil, vegetation, burn severity, transmissivity, and cohesion fields
+- `daily_forcing.py`: prepared PRISM forcing loading and nodata sanitization
+- `snow.py`: rain/snow partitioning, SWE, and melt
+- `ecohydrology.py`: daily PET and soil moisture
+- `landslides.py`: routed recharge and Landlab landslide probability
+- `exports.py`: optional GeoTIFF and ASC outputs
+
+Prepare PRISM forcing once for the AOI, date window, and DEM grid:
+
+```bash
+build-prism-forcing \
+  --start-date 2025-12-07 \
+  --end-date 2025-12-20 \
+  --dem-path /mnt/c/Users/amehedi/Downloads/pioneer/output/topographic__elevation.asc \
+  --aoi-path /mnt/c/Users/amehedi/Downloads/pioneer/huc_pioneer1.shp \
+  --output-dir /mnt/c/Users/amehedi/Downloads/pioneer/output/prism_forcing \
+  --dem-crs EPSG:32610
+```
+
+The MMP pipeline does not download PRISM data. It reads the prepared
+`prism_forcing/forcing_daily_prism.csv` index and the ASC files referenced by that index.
+If the index is missing or incomplete, it can also discover the standard
+`prism_forcing/asc/{ppt,tmin,tmax}/` files by date.
+
+Run the model from the repo root after all scenario inputs are present:
+
+```bash
+python scripts/run_mmp_landslide.py \
+  --config config/mmp_landslide.yaml \
+  --summary-json experiments/mmp_landslide/summary.json
+```
+
+With an installed editable package, the console command is also available:
+
+```bash
+run-mmp-landslide --config config/mmp_landslide.yaml
+```
+
+Use small YAML overrides for alternate date windows, parameters, or export settings:
+
+```bash
+python scripts/run_mmp_landslide.py \
+  --config config/mmp_landslide.yaml \
+  --override config/scenarios/mmp_cohesion_burnsev_reduction.yaml
+```
+
+## Plot A Result In A Notebook
+
+After running the modular pipeline in a notebook:
+
+```python
+from debris_landlab.mmp import load_mmp_config, run_pipeline
+
+cfg = load_mmp_config("../config/mmp_landslide.yaml")
+result = run_pipeline(cfg)
+grid = result.grid
+```
+
+Plot landslide probability:
+
+```python
+from landlab.plot.imshow import imshow_grid_at_node
+
+imshow_grid_at_node(
+    grid,
+    "landslide__probability_of_failure",
+    plot_name="Landslide Probability of Failure",
+    var_name="LS probability",
+    var_units="[-]",
+    grid_units=("m", "m"),
+    cmap="magma_r",
+    vmin=0,
+    vmax=1,
+)
+```
+
+## Other Utilities
+
+Resolve config files:
+
+```bash
+resolve-workflow-config \
+  --base config/base.yaml \
+  --override config/scenarios/cohesion_burnsev_reduction.yaml \
+  --format yaml
+```
+
+Run terrain evolution batch experiments:
 
 ```bash
 python scripts/run_landlab_batch.py \
@@ -86,37 +135,7 @@ python scripts/run_landlab_batch.py \
   --out-dir experiments/landlab_batch
 ```
 
-## Config
-
-Use `config/base.yaml` for shared project settings and layer paths. Keep observed forcing in CSV and use small YAML overrides in `config/scenarios/` for scenario-specific changes.
-
-Resolve a base config plus one or more scenario overrides with:
-
-```bash
-resolve-workflow-config \
-  --base config/base.yaml \
-  --override config/scenarios/cohesion_burnsev_reduction.yaml \
-  --format yaml
-```
-
-The sample forcing table used by the landslide notebook is now stored in:
-
-```text
-data/forcing_daily.csv
-```
-
-Update `config/landlab_experiments.yaml` only if you are using the existing DEM evolution batch runner.
-
-Current default ASC directory:
-
-```yaml
-paths:
-  asc_dir: /mnt/c/Users/amehedi/Downloads/nsf_rapid/asc
-```
-
-## Export Raster Products
-
-Convert all ASC rasters in a directory to GeoTIFF and bundle them into one Zarr store:
+Export ASC rasters to GeoTIFF and Zarr:
 
 ```bash
 export-raster-products \
