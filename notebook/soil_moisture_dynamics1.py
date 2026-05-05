@@ -543,6 +543,31 @@ class SoilMoisture(Component):
         self._soil_wp = np.choose(
             self._vegtype, [wp_grass, wp_shrub, wp_tree, wp_bare, wp_shrub, wp_tree]
         )
+        
+
+        if "Porosity" in self._grid.at_cell:
+            self._soil_pc = np.clip(self._grid.at_cell["Porosity"], 0.05, 0.80)
+
+        if "field_capacity_saturation" in self._grid.at_cell:
+            self._soil_fc = np.clip(self._grid.at_cell["field_capacity_saturation"], 0.05, 0.98)
+
+        if "wilting_point_saturation" in self._grid.at_cell:
+            self._soil_wp = np.clip(self._grid.at_cell["wilting_point_saturation"], 0.01, 0.95)
+            self._soil_wp = np.minimum(self._soil_wp, self._soil_fc - 0.01)
+
+        #fc/n 
+        # if "Porosity" in self._grid.at_cell:
+        #     self._soil_pc = np.clip(self._grid.at_cell["Porosity"], 0.05, 0.80)
+
+        # if "field_capacity_saturation" in self._grid.at_cell:
+        #     fc_sat = self._grid.at_cell["field_capacity_saturation"] / np.maximum(self._soil_pc, 1e-6)
+        #     self._soil_fc = np.clip(fc_sat, 0.05, 0.98)
+
+        # if "wilting_point_saturation" in self._grid.at_cell:
+        #     wp_sat = self._grid.at_cell["wilting_point_saturation"] / np.maximum(self._soil_pc, 1e-6)
+        #     self._soil_wp = np.clip(wp_sat, 0.01, 0.95)
+        #     self._soil_wp = np.minimum(self._soil_wp, self._soil_fc - 0.01)
+
 
         self._soil_hgw = np.choose(
             self._vegtype,
