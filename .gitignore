@@ -58,6 +58,7 @@ data/
 # Local cache/output
 notebook/landlab_ascii/
 notebook/cache/
+experiments/
 
 # Model artifacts / outputs
 *.ckpt
@@ -71,3 +72,6 @@ notebook/cache/
 *.tmp
 *.swp
 *~
+
+# Local notebooks
+*.ipynb
