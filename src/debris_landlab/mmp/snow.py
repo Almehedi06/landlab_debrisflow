@@ -68,7 +68,10 @@ def build_swe_and_water_input(
     water_input_arrays: list[np.ndarray] = []
     swe_arrays: list[np.ndarray] = []
     melt_arrays: list[np.ndarray] = []
-    swe_store = np.zeros(number_of_nodes, dtype=float)
+    # Initialize the SWE store
+    # swe_store = np.zeros(number_of_nodes, dtype=float)
+    swe_store = np.full(number_of_nodes, 118.0, dtype=float)  # initial SWE in mm
+
 
     for rain, snow, tmin, tmax in zip(
         rain_depth_arrays,

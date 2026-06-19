@@ -16,6 +16,7 @@ dependencies = [
   "requests>=2.31",
   "fiona>=1.9",
   "geopandas>=0.14",
+  "gdown>=5",
   "shapely>=2.0",
   "pyproj>=3.6",
   "zarr>=2.18",
@@ -37,7 +38,9 @@ dem-difference = "dem_difference:main"
 export-ascii-to-tif = "export_ascii_to_tif:main"
 export-raster-products = "export_ascii_to_tif:main"
 build-prism-forcing = "prism_forcing:main"
-resolve-workflow-config = "workflow_config:main"
+build-synoptic-station-forcing = "landlab_debrisflow.utilities.synoptic_station_forcing:main"
+download-nhdplus-flowlines = "landlab_debrisflow.utilities.nhdplus_flowlines:main"
+download-merit-basins-flowlines = "landlab_debrisflow.utilities.merit_basins_flowlines:main"
 run-mmp-landslide = "debris_landlab.mmp.cli:main"
 
 [tool.setuptools]
@@ -45,12 +48,10 @@ package-dir = {"" = "src"}
 py-modules = [
   "dem_difference",
   "export_ascii_to_tif",
-  "landlab_io",
   "prism_forcing",
   "reproject_and_resample",
-  "workflow_config",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["debris_landlab*"]
+include = ["debris_landlab*", "landlab_debrisflow*"]
